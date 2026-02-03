@@ -25,6 +25,17 @@ import toml
 load_dotenv(override=False)
 
 # ============================================================================
+# CONFIGURATION
+# ============================================================================
+
+# Server configuration
+CONFIG = {
+    "port": int(os.environ.get("PORT", 8081)),
+    "host": os.environ.get("HOST", "0.0.0.0"),
+    "frontend_port": int(os.environ.get("FRONTEND_PORT", 8080)),
+}
+
+# ============================================================================
 # API KEY LOADING
 # ============================================================================
 
@@ -55,11 +66,15 @@ api_key = load_api_key()
 # Initialize Deepgram client with API key
 deepgram = DeepgramClient(api_key=api_key)
 
-# Initialize Flask app - serve built frontend from frontend/dist/
-app = Flask(__name__, static_folder="./frontend/dist", static_url_path="/")
+# Initialize Flask app (API server only)
+app = Flask(__name__)
 
-# Enable CORS for all routes (needed for development)
-CORS(app)
+# Enable CORS for frontend communication
+# Frontend runs on port 8080, backend on port 8081
+CORS(app, origins=[
+    f"http://localhost:{CONFIG['frontend_port']}",
+    f"http://127.0.0.1:{CONFIG['frontend_port']}"
+], supports_credentials=True)
 
 # ============================================================================
 # HELPER FUNCTIONS
@@ -156,11 +171,6 @@ def format_error_response(error_type, code, message):
 # ============================================================================
 # API ROUTES
 # ============================================================================
-
-@app.route("/")
-def index():
-    """Serve the main frontend HTML file"""
-    return app.send_static_file("index.html")
 
 @app.route("/text-intelligence/analyze", methods=["POST"])
 def analyze():
@@ -320,14 +330,18 @@ def get_metadata():
 # ============================================================================
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
-    host = os.environ.get("HOST", "0.0.0.0")
+    port = CONFIG["port"]
+    host = CONFIG["host"]
+    frontend_port = CONFIG["frontend_port"]
     debug = os.environ.get("FLASK_DEBUG", "0") == "1"
 
     print("\n" + "=" * 70)
-    print(f"🚀 Flask Text Intelligence Server running at http://localhost:{port}")
-    print(f"📦 Serving built frontend from frontend/dist")
-    print(f"🐞 Debug mode: {'ON' if debug else 'OFF'}")
+    print(f"🚀 Flask Text Intelligence Server (Backend API)")
+    print("=" * 70)
+    print(f"Backend:  http://localhost:{port}")
+    print(f"Frontend: http://localhost:{frontend_port}")
+    print(f"CORS:     Enabled for frontend port {frontend_port}")
+    print(f"Debug:    {'ON' if debug else 'OFF'}")
     print("=" * 70 + "\n")
 
     app.run(host=host, port=port, debug=debug)
