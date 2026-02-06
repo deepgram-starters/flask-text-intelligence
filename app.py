@@ -180,19 +180,12 @@ def analyze():
     Contract-compliant text intelligence endpoint.
     Accepts:
     - Query parameters: summarize, topics, sentiment, intents, language (all optional)
-    - Header: X-Request-Id (optional, echoed back)
     - Body: JSON with either text or url field (required, not both)
 
     Returns:
     - Success (200): JSON with results object containing requested intelligence features
     - Error (4XX): JSON error response matching contract format
     """
-    # Echo X-Request-Id header if provided
-    request_id = request.headers.get('X-Request-Id')
-    if request_id:
-        # Will be included in response automatically via after_request
-        pass
-
     try:
         # Validate JSON body
         if not request.is_json:
@@ -201,10 +194,7 @@ def analyze():
                 "INVALID_TEXT",
                 "Request body must be JSON"
             )
-            response = jsonify(error)
-            if request_id:
-                response.headers['X-Request-Id'] = request_id
-            return response, 400
+            return jsonify(error), 400
 
         body = request.get_json()
 
@@ -216,10 +206,7 @@ def analyze():
                 "INVALID_TEXT" if "text" in error_msg.lower() else "INVALID_URL",
                 error_msg
             )
-            response = jsonify(error)
-            if request_id:
-                response.headers['X-Request-Id'] = request_id
-            return response, 400
+            return jsonify(error), 400
 
         # Build Deepgram options from query parameters
         options, error_msg = build_deepgram_options(request.args)
@@ -229,10 +216,7 @@ def analyze():
                 "INVALID_TEXT",
                 error_msg
             )
-            response = jsonify(error)
-            if request_id:
-                response.headers['X-Request-Id'] = request_id
-            return response, 400
+            return jsonify(error), 400
 
         # Call Deepgram API
         response_data = deepgram.read.v1.text.analyze(
@@ -252,10 +236,7 @@ def analyze():
             # Fallback: try dict() conversion
             result = {"results": dict(response_data.results) if hasattr(response_data, 'results') else {}}
 
-        response = jsonify(result)
-        if request_id:
-            response.headers['X-Request-Id'] = request_id
-        return response, 200
+        return jsonify(result), 200
 
     except Exception as e:
         print(f"Text Intelligence Error: {e}")
@@ -282,10 +263,7 @@ def analyze():
             error_message if status_code == 400 else "Text processing failed"
         )
 
-        response = jsonify(error)
-        if request_id:
-            response.headers['X-Request-Id'] = request_id
-        return response, status_code
+        return jsonify(error), status_code
 
 @app.route("/health", methods=["GET"])
 def health():
