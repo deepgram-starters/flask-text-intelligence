@@ -6,7 +6,7 @@ powered by Deepgram's Text Intelligence service. It's designed to be easily
 modified and extended for your own projects.
 
 Key Features:
-- Contract-compliant API endpoint: POST /text-intelligence/analyze
+- Contract-compliant API endpoint: POST /api/text-intelligence
 - Accepts text or URL in JSON body
 - Supports multiple intelligence features: summarization, topics, sentiment, intents
 - Serves built frontend from frontend/dist/
@@ -32,7 +32,6 @@ load_dotenv(override=False)
 CONFIG = {
     "port": int(os.environ.get("PORT", 8081)),
     "host": os.environ.get("HOST", "0.0.0.0"),
-    "frontend_port": int(os.environ.get("FRONTEND_PORT", 8080)),
 }
 
 # ============================================================================
@@ -70,11 +69,7 @@ deepgram = DeepgramClient(api_key=api_key)
 app = Flask(__name__)
 
 # Enable CORS for frontend communication
-# Frontend runs on port 8080, backend on port 8081
-CORS(app, origins=[
-    f"http://localhost:{CONFIG['frontend_port']}",
-    f"http://127.0.0.1:{CONFIG['frontend_port']}"
-], supports_credentials=True)
+CORS(app)
 
 # ============================================================================
 # HELPER FUNCTIONS
@@ -172,10 +167,10 @@ def format_error_response(error_type, code, message):
 # API ROUTES
 # ============================================================================
 
-@app.route("/text-intelligence/analyze", methods=["POST"])
+@app.route("/api/text-intelligence", methods=["POST"])
 def analyze():
     """
-    POST /text-intelligence/analyze
+    POST /api/text-intelligence
 
     Contract-compliant text intelligence endpoint.
     Accepts:
@@ -310,16 +305,18 @@ def get_metadata():
 if __name__ == "__main__":
     port = CONFIG["port"]
     host = CONFIG["host"]
-    frontend_port = CONFIG["frontend_port"]
     debug = os.environ.get("FLASK_DEBUG", "0") == "1"
 
     print("\n" + "=" * 70)
     print(f"🚀 Flask Text Intelligence Server (Backend API)")
     print("=" * 70)
     print(f"Backend:  http://localhost:{port}")
-    print(f"Frontend: http://localhost:{frontend_port}")
-    print(f"CORS:     Enabled for frontend port {frontend_port}")
+    print(f"CORS:     Enabled")
     print(f"Debug:    {'ON' if debug else 'OFF'}")
+    print("=" * 70)
+    print("")
+    print("📡 POST /api/text-intelligence")
+    print("📡 GET  /api/metadata")
     print("=" * 70 + "\n")
 
     app.run(host=host, port=port, debug=debug)
